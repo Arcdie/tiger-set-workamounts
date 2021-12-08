@@ -53,6 +53,10 @@ const start = async () => {
   let pathToSettingsFile = settings.pathToTigerSettingsFolder;
 
   filesNames.forEach(fileName => {
+    if (doesExistSettingsFile) {
+      return true;
+    }
+
     if (fileName.includes('Charting_')) {
       doesExistSettingsFile = true;
       pathToSettingsFile += `/${fileName}`;
