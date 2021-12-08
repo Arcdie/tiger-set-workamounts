@@ -111,9 +111,7 @@ const start = async () => {
       return false;
     }
 
-    const firstValues = [];
-
-    workingSymbols.forEach((workingSymbolName, indexSymbol) => {
+    workingSymbols.forEach(workingSymbolName => {
       const exchangeInfoSymbol = exchangeInfo.symbols.find(
         symbol => symbol.symbol === workingSymbolName,
       );
@@ -165,10 +163,6 @@ const start = async () => {
 
       [size1Arr, size2Arr, size3Arr, size4Arr, size5Arr].forEach((arr, index) => {
         const value = result[index];
-
-        if (indexSymbol === 0) {
-          firstValues.push(value);
-        }
 
         arr.forEach(e => {
           const symbolName = e['d5p1:Key'][0].split('_')[0];
