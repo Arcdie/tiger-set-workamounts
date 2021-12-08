@@ -114,7 +114,7 @@ const start = async () => {
 
     if (!workingSymbols.length) {
       console.log(`Trading: В файле конфигурации нет инструментов; path: ${pathToSettingsFile}`);
-      return false;
+      continue;
     }
 
     workingSymbols.forEach(workingSymbolName => {
@@ -129,14 +129,14 @@ const start = async () => {
 
       if (!exchangeInfoSymbol.filters || !exchangeInfoSymbol.filters.length || !exchangeInfoSymbol.filters[2].stepSize) {
         console.log(`Trading: Не могу найти stepSize; symbol: ${workingSymbolName}`);
-        return null;
+        return true;
       }
 
       const instrumentPriceDoc =  instrumentsPrices.find(doc => doc.symbol === workingSymbolName);
 
       if (!instrumentPriceDoc) {
         console.log(`Trading: Не могу найти цену; symbol: ${workingSymbolName}`);
-        return null;
+        return true;
       }
 
       const stepSize = parseFloat(exchangeInfoSymbol.filters[2].stepSize);
@@ -213,7 +213,7 @@ const start = async () => {
 
     if (!workingSymbols.length) {
       console.log(`Charting: В файле конфигурации нет инструментов; path: ${pathToSettingsFile}`);
-      return false;
+      continue;
     }
 
     workingSymbols.forEach(workingSymbolName => {
@@ -228,14 +228,14 @@ const start = async () => {
 
       if (!exchangeInfoSymbol.filters || !exchangeInfoSymbol.filters.length || !exchangeInfoSymbol.filters[2].stepSize) {
         console.log(`Charting: Не могу найти stepSize; symbol: ${workingSymbolName}`);
-        return null;
+        return true;
       }
 
       const instrumentPriceDoc =  instrumentsPrices.find(doc => doc.symbol === workingSymbolName);
 
       if (!instrumentPriceDoc) {
         console.log(`Charting: Не могу найти цену; symbol: ${workingSymbolName}`);
-        return null;
+        return true;
       }
 
       const stepSize = parseFloat(exchangeInfoSymbol.filters[2].stepSize);
