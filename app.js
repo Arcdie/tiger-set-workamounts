@@ -49,15 +49,20 @@ const start = async () => {
 
   const filesNames = fs.readdirSync(settings.pathToTigerSettingsFolder);
 
-  let pathsToSettingsFiles = [];
+  let pathsToTradingSettingsFiles = [];
+  let pathsToChartingSettingsFiles = [];
 
   filesNames.forEach(fileName => {
     if (fileName.includes('Charting_')) {
-      pathsToSettingsFiles.push(`${settings.pathToTigerSettingsFolder}/${fileName}`);
+      pathsToChartingSettingsFiles.push(`${settings.pathToTigerSettingsFolder}/${fileName}`);
+    }
+
+    if (fileName.includes('Trading_')) {
+      pathsToTradingSettingsFiles.push(`${settings.pathToTigerSettingsFolder}/${fileName}`);
     }
   });
 
-  if (!pathsToSettingsFiles.length) {
+  if (!pathsToChartingSettingsFiles.length && !pathsToTradingSettingsFiles.length) {
     console.log('Не могу найти файл конфигурации в папке');
     return false;
   }
@@ -89,7 +94,107 @@ const start = async () => {
     workAmounts.push(Math.floor(depositForCalculate * i));
   }
 
-  for await (const pathToSettingsFile of pathsToSettingsFiles) {
+  // Trading
+  for await (const pathToSettingsFile of pathsToTradingSettingsFiles) {
+    const fileContent = fs.readFileSync(pathToSettingsFile, 'utf8');
+    const parsedContent = await xml2js.parseStringPromise(fileContent);
+
+    const workingSymbols = [];
+
+    const size1Arr = parsedContent.TradingSettings.MarketSettings[0]['d2p1:Preset1'][0]['d3p1:SizeParam'][0]['d4p1:Values'][0]['d5p1:KeyValueOfstringdouble'];
+    const size2Arr = parsedContent.TradingSettings.MarketSettings[0]['d2p1:Preset2'][0]['d3p1:SizeParam'][0]['d4p1:Values'][0]['d5p1:KeyValueOfstringdouble'];
+    const size3Arr = parsedContent.TradingSettings.MarketSettings[0]['d2p1:Preset3'][0]['d3p1:SizeParam'][0]['d4p1:Values'][0]['d5p1:KeyValueOfstringdouble'];
+    const size4Arr = parsedContent.TradingSettings.MarketSettings[0]['d2p1:Preset4'][0]['d3p1:SizeParam'][0]['d4p1:Values'][0]['d5p1:KeyValueOfstringdouble'];
+    const size5Arr = parsedContent.TradingSettings.MarketSettings[0]['d2p1:Preset5'][0]['d3p1:SizeParam'][0]['d4p1:Values'][0]['d5p1:KeyValueOfstringdouble'];
+
+    size1Arr.forEach(e => {
+      const symbolName = e['d5p1:Key'][0].split('_')[0];
+      workingSymbols.push(symbolName);
+    });
+
+    if (!workingSymbols.length) {
+      console.log(`Trading: В файле конфигурации нет инструментов; path: ${pathToSettingsFile}`);
+      return false;
+    }
+
+    workingSymbols.forEach(workingSymbolName => {
+      const exchangeInfoSymbol = exchangeInfo.symbols.find(
+        symbol => symbol.symbol === workingSymbolName,
+      );
+
+      if (!exchangeInfoSymbol) {
+        console.log(`Trading: Не могу найти совпадение; symbol: ${workingSymbolName}`);
+        return true;
+      }
+
+      if (!exchangeInfoSymbol.filters || !exchangeInfoSymbol.filters.length || !exchangeInfoSymbol.filters[2].stepSize) {
+        console.log(`Trading: Не могу найти stepSize; symbol: ${workingSymbolName}`);
+        return null;
+      }
+
+      const instrumentPriceDoc =  instrumentsPrices.find(doc => doc.symbol === workingSymbolName);
+
+      if (!instrumentPriceDoc) {
+        console.log(`Trading: Не могу найти цену; symbol: ${workingSymbolName}`);
+        return null;
+      }
+
+      const stepSize = parseFloat(exchangeInfoSymbol.filters[2].stepSize);
+      const instrumentPrice = parseFloat(instrumentPriceDoc.price);
+      const stepSizePrecision = getPrecision(stepSize);
+
+      const result = workAmounts.map(workAmount => {
+        let tmp = workAmount / instrumentPrice;
+
+        if (tmp < stepSize) {
+          tmp = stepSize;
+        } else {
+          const remainder = tmp % stepSize;
+
+          if (remainder !== 0) {
+            tmp -= remainder;
+
+            if (tmp < stepSize) {
+              tmp = stepSize;
+            }
+          }
+        }
+
+        if (!Number.isInteger(tmp)) {
+          tmp = tmp.toFixed(stepSizePrecision);
+        }
+
+        return parseFloat(tmp, 10);
+      });
+
+      [size1Arr, size2Arr, size3Arr, size4Arr, size5Arr].forEach((arr, index) => {
+        const value = result[index];
+
+        arr.forEach(e => {
+          const symbolName = e['d5p1:Key'][0].split('_')[0];
+
+          if (symbolName !== workingSymbolName) {
+            return true;
+          }
+
+          e['d5p1:Value'][0] = value;
+        });
+      });
+    });
+
+    parsedContent.TradingSettings.MarketSettings[0]['d2p1:Preset1'][0]['d3p1:SizeParam'][0]['d4p1:Value'][0] = 1;
+    parsedContent.TradingSettings.MarketSettings[0]['d2p1:Preset2'][0]['d3p1:SizeParam'][0]['d4p1:Value'][0] = 2;
+    parsedContent.TradingSettings.MarketSettings[0]['d2p1:Preset3'][0]['d3p1:SizeParam'][0]['d4p1:Value'][0] = 3;
+    parsedContent.TradingSettings.MarketSettings[0]['d2p1:Preset4'][0]['d3p1:SizeParam'][0]['d4p1:Value'][0] = 4;
+    parsedContent.TradingSettings.MarketSettings[0]['d2p1:Preset5'][0]['d3p1:SizeParam'][0]['d4p1:Value'][0] = 5;
+
+    const builder = new xml2js.Builder();
+    const xml = builder.buildObject(parsedContent);
+    fs.writeFileSync(pathToSettingsFile, xml);
+  }
+
+  // Charting
+  for await (const pathToSettingsFile of pathsToChartingSettingsFiles) {
     const fileContent = fs.readFileSync(pathToSettingsFile, 'utf8');
     const parsedContent = await xml2js.parseStringPromise(fileContent);
 
@@ -107,7 +212,7 @@ const start = async () => {
     });
 
     if (!workingSymbols.length) {
-      console.log(`В файле конфигурации нет инструментов; path: ${pathToSettingsFile}`);
+      console.log(`Charting: В файле конфигурации нет инструментов; path: ${pathToSettingsFile}`);
       return false;
     }
 
@@ -117,19 +222,19 @@ const start = async () => {
       );
 
       if (!exchangeInfoSymbol) {
-        console.log(`Не могу найти совпадение; symbol: ${workingSymbolName}`);
+        console.log(`Charting: Не могу найти совпадение; symbol: ${workingSymbolName}`);
         return true;
       }
 
       if (!exchangeInfoSymbol.filters || !exchangeInfoSymbol.filters.length || !exchangeInfoSymbol.filters[2].stepSize) {
-        console.log(`Не могу найти stepSize; symbol: ${workingSymbolName}`);
+        console.log(`Charting: Не могу найти stepSize; symbol: ${workingSymbolName}`);
         return null;
       }
 
       const instrumentPriceDoc =  instrumentsPrices.find(doc => doc.symbol === workingSymbolName);
 
       if (!instrumentPriceDoc) {
-        console.log(`Не могу найти цену; symbol: ${workingSymbolName}`);
+        console.log(`Charting: Не могу найти цену; symbol: ${workingSymbolName}`);
         return null;
       }
 
