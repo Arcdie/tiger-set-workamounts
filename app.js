@@ -112,9 +112,9 @@ const start = async () => {
     return false;
   }
 
-  const maxAmounts = [];
+  const firstValues = [];
 
-  workingSymbols.forEach(workingSymbolName => {
+  workingSymbols.forEach((workingSymbolName, indexSymbol) => {
     const exchangeInfoSymbol = exchangeInfo.symbols.find(
       symbol => symbol.symbol === workingSymbolName,
     );
@@ -161,15 +161,14 @@ const start = async () => {
         tmp = tmp.toFixed(stepSizePrecision);
       }
 
-      return parseFloat(tmp);
-      // .replace('.', ',');
+      return parseFloat(tmp, 10);
     });
 
     [size1Arr, size2Arr, size3Arr, size4Arr, size5Arr].forEach((arr, index) => {
-      const maxAmount = maxAmounts[index];
+      const value = result[index];
 
-      if (!maxAmount || result[index] > maxAmount) {
-        maxAmounts[index] = result[index];
+      if (indexSymbol === 0) {
+        firstValues.push(value);
       }
 
       arr.forEach(e => {
@@ -179,16 +178,16 @@ const start = async () => {
           return true;
         }
 
-        e['d5p1:Value'][0] = result[index].toString();
+        e['d5p1:Value'][0] = value;
       });
     });
   });
 
-  parsedContent.ChartingSettings.ChartSettings[0]['d2p1:TradeSettings'][0]['d2p1:Size1Param'][0]['d4p1:Value'][0] = maxAmounts[0].toString();
-  parsedContent.ChartingSettings.ChartSettings[0]['d2p1:TradeSettings'][0]['d2p1:Size2Param'][0]['d4p1:Value'][0] = maxAmounts[1].toString();
-  parsedContent.ChartingSettings.ChartSettings[0]['d2p1:TradeSettings'][0]['d2p1:Size3Param'][0]['d4p1:Value'][0] = maxAmounts[2].toString();
-  parsedContent.ChartingSettings.ChartSettings[0]['d2p1:TradeSettings'][0]['d2p1:Size4Param'][0]['d4p1:Value'][0] = maxAmounts[3].toString();
-  parsedContent.ChartingSettings.ChartSettings[0]['d2p1:TradeSettings'][0]['d2p1:Size5Param'][0]['d4p1:Value'][0] = maxAmounts[4].toString();
+  parsedContent.ChartingSettings.ChartSettings[0]['d2p1:TradeSettings'][0]['d2p1:Size1Param'][0]['d4p1:Value'][0] = 1;
+  parsedContent.ChartingSettings.ChartSettings[0]['d2p1:TradeSettings'][0]['d2p1:Size2Param'][0]['d4p1:Value'][0] = 2;
+  parsedContent.ChartingSettings.ChartSettings[0]['d2p1:TradeSettings'][0]['d2p1:Size3Param'][0]['d4p1:Value'][0] = 3;
+  parsedContent.ChartingSettings.ChartSettings[0]['d2p1:TradeSettings'][0]['d2p1:Size4Param'][0]['d4p1:Value'][0] = 4;
+  parsedContent.ChartingSettings.ChartSettings[0]['d2p1:TradeSettings'][0]['d2p1:Size5Param'][0]['d4p1:Value'][0] = 5;
 
   const builder = new xml2js.Builder();
   const xml = builder.buildObject(parsedContent);
