@@ -5,9 +5,7 @@
   "main": "app.js",
   "dependencies": {
     "axios": "^0.23.0",
-    "electron": "^16.0.4",
-    "iohook": "^0.9.3",
-    "robotjs": "^0.6.0",
+    "iohook": "^0.6.6",
     "xml2js": "^0.4.23"
   }
 }
