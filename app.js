@@ -40,17 +40,17 @@ const rl = readline.createInterface({
 });
 
 let isReady = false;
-let wasSkip = false;
 let depositForCalculate = false;
 let xAndYOfFirstWorkAmount = false;
 let xAndYOfSecondWorkAmount = false;
 let xAndYOfWorkAmountsPanel = false;
+let xAndYOfWorkAmountsPanel2 = false;
 let setCursorToFirstInstrument = false;
 
 const orderSteps = [
   'depositForCalculate',
   'xAndYOfWorkAmountsPanel',
-  'skip',
+  'xAndYOfWorkAmountsPanel2',
   'xAndYOfFirstWorkAmount',
   'xAndYOfSecondWorkAmount',
   'setCursorToFirstInstrument',
@@ -76,12 +76,13 @@ const start = async () => {
     return true;
   }
 
-  if (!wasSkip) {
+  if (!xAndYOfWorkAmountsPanel2) {
+    console.log('Нажмите мышкой на место, где находится 1-й объем');
     return true;
   }
 
   if (!xAndYOfFirstWorkAmount) {
-    console.log('Нажмите мышкой на место, где находится 1-й объем');
+    // console.log('Нажмите мышкой на место, где находится 1-й объем');
     return true;
   }
 
@@ -95,7 +96,22 @@ const start = async () => {
     return true;
   }
 
-  console.log('Процесс пошел..');
+  const differenceBetweenWorkAmounts = Math.abs(xAndYOfFirstWorkAmount.y - xAndYOfSecondWorkAmount.y);
+
+  const xAndYOfThirdWorkAmount = {
+    x: xAndYOfFifthWorkAmount,
+    y: xAndYOfSecondWorkAmount.y - differenceBetweenWorkAmounts,
+  };
+
+  const xAndYOfFourthWorkAmount = {
+    x: xAndYOfFifthWorkAmount,
+    y: xAndYOfThirdWorkAmount.y - differenceBetweenWorkAmounts,
+  };
+
+  const xAndYOfFifthWorkAmount = {
+    x: xAndYOfFifthWorkAmount,
+    y: xAndYOfFourthWorkAmount.y - differenceBetweenWorkAmounts,
+  };
 
   /*
   const resultGetExchangeInfo = await getExchangeInfo();
@@ -120,6 +136,34 @@ const start = async () => {
 
   for (let i = 1; i < 6; i += 1) {
     workAmounts.push(Math.floor(depositForCalculate * i));
+  }
+
+  let currentInstrumentName = '';
+
+  while (1) {
+    robot.keyTap('c', ['command']);
+    currentInstrumentName = ncp.paste();
+
+    robot.moveMouse(xAndYOfWorkAmountsPanel.x, xAndYOfWorkAmountsPanel.y);
+    robot.mouseClick();
+
+    robot.moveMouse(xAndYOfWorkAmountsPanel2.x, xAndYOfWorkAmountsPanel2.y);
+    robot.mouseClick();
+
+    [
+      xAndYOfFifthWorkAmount,
+      xAndYOfSecondWorkAmount,
+      xAndYOfThirdWorkAmount,
+      xAndYOfFourthWorkAmount,
+      xAndYOfFifthWorkAmount,
+    ].forEach(({ x, y }, index) => {
+      robot.moveMouse(x, y);
+      robot.mouseClick();
+
+      robot.typeString(index + 1);
+    });
+
+    robot.keyTap('down');
   }
 
   console.log('Process was finished');
@@ -186,16 +230,16 @@ mouseEvents.on('mouseup', (event) => {
   } = event;
 
   switch (currentStep.stepName) {
-    case 'skip': {
-      wasSkip = true;
+    case 'xAndYOfWorkAmountsPanel': {
+      xAndYOfWorkAmountsPanel = [x, y];
+      console.log('xAndYOfWorkAmountsPanel', xAndYOfWorkAmountsPanel);
       currentStep.incrementStep();
       start();
       break;
     }
 
-    case 'xAndYOfWorkAmountsPanel': {
-      xAndYOfWorkAmountsPanel = [x, y];
-      console.log('xAndYOfWorkAmountsPanel', xAndYOfWorkAmountsPanel);
+    case 'xAndYOfWorkAmountsPanel2': {
+      xAndYOfWorkAmountsPanel2 = true;
       currentStep.incrementStep();
       start();
       break;
