@@ -54,6 +54,7 @@ const orderSteps = [
   'xAndYOfFirstWorkAmount',
   'xAndYOfSecondWorkAmount',
   'setCursorToFirstInstrument',
+  'end',
 ];
 
 const currentStep = {
@@ -65,6 +66,8 @@ const currentStep = {
     this.stepName = orderSteps[this.index];
   },
 };
+
+const DELAY = 300; // in ms
 
 const start = async () => {
   if (!depositForCalculate) {
@@ -99,21 +102,20 @@ const start = async () => {
   const differenceBetweenWorkAmounts = Math.abs(xAndYOfFirstWorkAmount.y - xAndYOfSecondWorkAmount.y);
 
   const xAndYOfThirdWorkAmount = {
-    x: xAndYOfFifthWorkAmount,
-    y: xAndYOfSecondWorkAmount.y - differenceBetweenWorkAmounts,
+    x: xAndYOfFirstWorkAmount.x,
+    y: xAndYOfSecondWorkAmount.y + differenceBetweenWorkAmounts,
   };
 
   const xAndYOfFourthWorkAmount = {
-    x: xAndYOfFifthWorkAmount,
-    y: xAndYOfThirdWorkAmount.y - differenceBetweenWorkAmounts,
+    x: xAndYOfFirstWorkAmount.x,
+    y: xAndYOfThirdWorkAmount.y + differenceBetweenWorkAmounts,
   };
 
   const xAndYOfFifthWorkAmount = {
-    x: xAndYOfFifthWorkAmount,
-    y: xAndYOfFourthWorkAmount.y - differenceBetweenWorkAmounts,
+    x: xAndYOfFirstWorkAmount.x,
+    y: xAndYOfFourthWorkAmount.y + differenceBetweenWorkAmounts,
   };
 
-  /*
   const resultGetExchangeInfo = await getExchangeInfo();
 
   if (!resultGetExchangeInfo || !resultGetExchangeInfo.status) {
@@ -130,7 +132,6 @@ const start = async () => {
 
   const exchangeInfo = resultGetExchangeInfo.result;
   const instrumentsPrices = resultGetInstrumentsPrices.result;
-  */
 
   const workAmounts = [];
 
@@ -138,32 +139,118 @@ const start = async () => {
     workAmounts.push(Math.floor(depositForCalculate * i));
   }
 
+  const arrOfPositions = [
+    xAndYOfFirstWorkAmount,
+    xAndYOfSecondWorkAmount,
+    xAndYOfThirdWorkAmount,
+    xAndYOfFourthWorkAmount,
+    xAndYOfFifthWorkAmount,
+  ];
+
   let currentInstrumentName = '';
 
   while (1) {
-    robot.keyTap('c', ['command']);
-    currentInstrumentName = ncp.paste();
+    robot.keyTap('c', ['control']);
+    const currentName = ncp.paste().toString().trim();
 
-    robot.moveMouse(xAndYOfWorkAmountsPanel.x, xAndYOfWorkAmountsPanel.y);
-    robot.mouseClick();
+    if (currentName === currentInstrumentName) {
+      break;
+    }
 
-    robot.moveMouse(xAndYOfWorkAmountsPanel2.x, xAndYOfWorkAmountsPanel2.y);
-    robot.mouseClick();
+    currentInstrumentName = currentName;
 
-    [
-      xAndYOfFifthWorkAmount,
-      xAndYOfSecondWorkAmount,
-      xAndYOfThirdWorkAmount,
-      xAndYOfFourthWorkAmount,
-      xAndYOfFifthWorkAmount,
-    ].forEach(({ x, y }, index) => {
-      robot.moveMouse(x, y);
-      robot.mouseClick();
+    const exchangeInfoSymbol = exchangeInfo.symbols.find(
+      symbol => symbol.symbol === currentName,
+    );
 
-      robot.typeString(index + 1);
+    if (!exchangeInfoSymbol) {
+      console.log(`Не могу найти совпадение; symbol: ${currentName}`);
+      robot.keyTap('down');
+      await sleep(1000);
+      continue;
+    }
+
+    if (!exchangeInfoSymbol.filters || !exchangeInfoSymbol.filters.length || !exchangeInfoSymbol.filters[2].stepSize) {
+      console.log(`Не могу найти stepSize; symbol: ${currentName}`);
+      robot.keyTap('down');
+      await sleep(1000);
+      continue;
+    }
+
+    const instrumentPriceDoc =  instrumentsPrices.find(doc => doc.symbol === currentName);
+
+    if (!instrumentPriceDoc) {
+      console.log(`Не могу найти цену; symbol: ${currentName}`);
+      robot.keyTap('down');
+      await sleep(1000);
+      continue;
+    }
+
+    const stepSize = parseFloat(exchangeInfoSymbol.filters[2].stepSize);
+    const instrumentPrice = parseFloat(instrumentPriceDoc.price);
+    const stepSizePrecision = getPrecision(stepSize);
+
+    const result = workAmounts.map(workAmount => {
+      let tmp = workAmount / instrumentPrice;
+
+      if (tmp < stepSize) {
+        tmp = stepSize;
+      } else {
+        const remainder = tmp % stepSize;
+
+        if (remainder !== 0) {
+          tmp -= remainder;
+
+          if (tmp < stepSize) {
+            tmp = stepSize;
+          }
+        }
+      }
+
+      if (!Number.isInteger(tmp)) {
+        tmp = tmp.toFixed(stepSizePrecision);
+      }
+
+      return parseFloat(tmp, 10);
     });
 
+    robot.moveMouse(xAndYOfWorkAmountsPanel.x, xAndYOfWorkAmountsPanel.y);
+    // await sleep(3000);
+    robot.mouseClick();
+    await sleep(DELAY);
+
+    robot.moveMouse(xAndYOfWorkAmountsPanel2.x, xAndYOfWorkAmountsPanel2.y);
+
+    // await sleep(3000);
+    robot.mouseClick();
+    await sleep(DELAY);
+
+    let index = 0;
+    for await (const workAmountPosition of arrOfPositions) {
+      robot.moveMouse(workAmountPosition.x, workAmountPosition.y);
+      // await sleep(3000);
+      robot.mouseClick('left', true);
+
+      const sum = result[index].toString().replace('.', ',');
+
+      ncp.copy(sum);
+      await sleep(150);
+      robot.keyTap('v', ['control']);
+
+      // const delay = lSum > 4 ? DELAY * 2 : DELAY;
+      // robot.typeString(result[index]);
+      index += 1;
+
+      await sleep(DELAY);
+    }
+
+    robot.moveMouse(xAndYOfWorkAmountsPanel2.x, xAndYOfWorkAmountsPanel2.y);
+
+    // await sleep(3000);
+    robot.mouseClick();
+
     robot.keyTap('down');
+    await sleep(1000);
   }
 
   console.log('Process was finished');
@@ -226,52 +313,46 @@ const getPrecision = (price) => {
 
 mouseEvents.on('mouseup', (event) => {
   const {
-    x, y,
+    x, y, button,
   } = event;
+
+  if (button === 2) {
+    process.exit(1);
+  }
 
   switch (currentStep.stepName) {
     case 'xAndYOfWorkAmountsPanel': {
-      xAndYOfWorkAmountsPanel = [x, y];
-      console.log('xAndYOfWorkAmountsPanel', xAndYOfWorkAmountsPanel);
+      xAndYOfWorkAmountsPanel = { x, y };
       currentStep.incrementStep();
-      start();
+      return start();
       break;
     }
 
     case 'xAndYOfWorkAmountsPanel2': {
-      xAndYOfWorkAmountsPanel2 = true;
+      xAndYOfWorkAmountsPanel2 = { x, y };
       currentStep.incrementStep();
-      start();
+      return start();
       break;
     }
 
     case 'xAndYOfFirstWorkAmount': {
-      xAndYOfFirstWorkAmount = [x, y];
-      console.log('xAndYOfFirstWorkAmount', xAndYOfFirstWorkAmount);
+      xAndYOfFirstWorkAmount = { x, y };
       currentStep.incrementStep();
-      start();
+      return start();
       break;
     }
 
     case 'xAndYOfSecondWorkAmount': {
-      xAndYOfSecondWorkAmount = [x, y];
-      console.log('xAndYOfSecondWorkAmount', xAndYOfSecondWorkAmount);
+      xAndYOfSecondWorkAmount = { x, y };
       currentStep.incrementStep();
-      start();
-      break;
-    }
-
-    case 'xAndYOfSecondWorkAmount': {
-      xAndYOfSecondWorkAmount = [x, y];
-      console.log('xAndYOfSecondWorkAmount', xAndYOfSecondWorkAmount);
-      currentStep.incrementStep();
-      start();
+      return start();
       break;
     }
 
     case 'setCursorToFirstInstrument': {
       setCursorToFirstInstrument = true;
-      start();
+      currentStep.incrementStep();
+      return start();
       break;
     }
 
@@ -279,13 +360,17 @@ mouseEvents.on('mouseup', (event) => {
   }
 });
 
+const sleep = ms => {
+  return new Promise(resolve => setTimeout(resolve, ms));
+};
+
 start();
 
 /*
 setTimeout(() => {
   for (let i = 0; i < 10; i += 1) {
     robot.keyTap('down');
-    robot.keyTap('c', ['command']);
+    robot.keyTap('c', ['control']);
     console.log(ncp.paste());
   }
 }, 5000);
