@@ -40,12 +40,20 @@ const rl = readline.createInterface({
 });
 
 let isReady = false;
-let xAndYOfVolumePanel = false;
+let wasSkip = false;
 let depositForCalculate = false;
+let xAndYOfFirstWorkAmount = false;
+let xAndYOfSecondWorkAmount = false;
+let xAndYOfWorkAmountsPanel = false;
+let setCursorToFirstInstrument = false;
 
 const orderSteps = [
   'depositForCalculate',
-  'xAndYOfVolumePanel',
+  'xAndYOfWorkAmountsPanel',
+  'skip',
+  'xAndYOfFirstWorkAmount',
+  'xAndYOfSecondWorkAmount',
+  'setCursorToFirstInstrument',
 ];
 
 const currentStep = {
@@ -63,14 +71,31 @@ const start = async () => {
     return askQuestion('depositForCalculate');
   }
 
-  if (!xAndYOfVolumePanel) {
+  if (!xAndYOfWorkAmountsPanel) {
     console.log('Нажмите мышкой на место, где находится панель объемов');
     return true;
   }
 
-  // if (!isReady) {
-  //   return askQuestion('areYouReady');
-  // }
+  if (!wasSkip) {
+    return true;
+  }
+
+  if (!xAndYOfFirstWorkAmount) {
+    console.log('Нажмите мышкой на место, где находится 1-й объем');
+    return true;
+  }
+
+  if (!xAndYOfSecondWorkAmount) {
+    console.log('Нажмите мышкой на место, где находится 2-й объем');
+    return true;
+  }
+
+  if (!setCursorToFirstInstrument) {
+    console.log('Нажмите мышкой на 1-й инструмент в списке');
+    return true;
+  }
+
+  console.log('Процесс пошел..');
 
   /*
   const resultGetExchangeInfo = await getExchangeInfo();
@@ -161,9 +186,47 @@ mouseEvents.on('mouseup', (event) => {
   } = event;
 
   switch (currentStep.stepName) {
-    case 'xAndYOfVolumePanel': {
-      xAndYOfVolumePanel = [x, y];
+    case 'skip': {
+      wasSkip = true;
       currentStep.incrementStep();
+      start();
+      break;
+    }
+
+    case 'xAndYOfWorkAmountsPanel': {
+      xAndYOfWorkAmountsPanel = [x, y];
+      console.log('xAndYOfWorkAmountsPanel', xAndYOfWorkAmountsPanel);
+      currentStep.incrementStep();
+      start();
+      break;
+    }
+
+    case 'xAndYOfFirstWorkAmount': {
+      xAndYOfFirstWorkAmount = [x, y];
+      console.log('xAndYOfFirstWorkAmount', xAndYOfFirstWorkAmount);
+      currentStep.incrementStep();
+      start();
+      break;
+    }
+
+    case 'xAndYOfSecondWorkAmount': {
+      xAndYOfSecondWorkAmount = [x, y];
+      console.log('xAndYOfSecondWorkAmount', xAndYOfSecondWorkAmount);
+      currentStep.incrementStep();
+      start();
+      break;
+    }
+
+    case 'xAndYOfSecondWorkAmount': {
+      xAndYOfSecondWorkAmount = [x, y];
+      console.log('xAndYOfSecondWorkAmount', xAndYOfSecondWorkAmount);
+      currentStep.incrementStep();
+      start();
+      break;
+    }
+
+    case 'setCursorToFirstInstrument': {
+      setCursorToFirstInstrument = true;
       start();
       break;
     }
