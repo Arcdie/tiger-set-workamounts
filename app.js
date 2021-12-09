@@ -3,6 +3,7 @@ const robot = require('robotjs');
 const ncp = require('copy-paste');
 const readline = require('readline');
 const { execSync } = require('child_process');
+const mouseEvents = require('global-mouse-events');
 
 let settings = {
   areModulesLoaded: false,
@@ -154,24 +155,22 @@ const getPrecision = (price) => {
   return dividedPrice[1].length;
 };
 
-// ioHook.on('mouseclick', (event) => {
-//   const {
-//     x, y,
-//   } = event;
-//
-//   console.log('x', x, 'y', y);
-//
-//   switch (currentStep.stepName) {
-//     case 'xAndYOfVolumePanel': {
-//       xAndYOfVolumePanel = [x, y];
-//       currentStep.incrementStep();
-//       start();
-//       break;
-//     }
-//
-//     default: break;
-//   }
-// });
+mouseEvents.on('mouseup', (event) => {
+  const {
+    x, y,
+  } = event;
+
+  switch (currentStep.stepName) {
+    case 'xAndYOfVolumePanel': {
+      xAndYOfVolumePanel = [x, y];
+      currentStep.incrementStep();
+      start();
+      break;
+    }
+
+    default: break;
+  }
+});
 
 start();
 
