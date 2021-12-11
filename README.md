@@ -6,9 +6,6 @@
 3. Запустить go.bat файл;
 4. Следовать инструкциям в консоли;
 
-<b>Tiger должен быть выключенным</b>;<br>
-<b>Путь к папке должен иметь вид C:/Users/USER_NAME/AppData/Roaming/TigerTrade/4.1/Config/Settings</b>;
-
 # Donate
 
 <ul>

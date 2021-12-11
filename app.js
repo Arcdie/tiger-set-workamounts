@@ -1,9 +1,13 @@
+/* Constants */
+
+const DELAY = 300; // in ms
+
+/* Constants */
+
 const fs = require('fs');
-const robot = require('robotjs');
-const ncp = require('copy-paste');
+
 const readline = require('readline');
 const { execSync } = require('child_process');
-const mouseEvents = require('global-mouse-events');
 
 let settings = {
   areModulesLoaded: false,
@@ -25,6 +29,10 @@ if (!settings.areModulesLoaded) {
   settings.areModulesLoaded = true;
   updateSettings();
 }
+
+const robot = require('robotjs');
+const ncp = require('copy-paste');
+const mouseEvents = require('global-mouse-events');
 
 const {
   getExchangeInfo,
@@ -70,8 +78,6 @@ const currentStep = {
     this.stepName = orderSteps[this.index];
   },
 };
-
-const DELAY = 300; // in ms
 
 const start = async () => {
   if (!depositForCalculate) {
@@ -208,18 +214,17 @@ const start = async () => {
         tmp = tmp.toFixed(stepSizePrecision);
       }
 
-      return parseFloat(tmp, 10);
+      return parseFloat(tmp);
     });
 
     robot.moveMouse(xAndYOfWorkAmountsPanel.x, xAndYOfWorkAmountsPanel.y);
-    // await sleep(3000);
+
     robot.mouseClick();
     await sleep(DELAY);
 
     let index = 0;
     for await (const workAmountPosition of arrOfPositions) {
       robot.moveMouse(workAmountPosition.x, workAmountPosition.y);
-      // await sleep(3000);
       robot.mouseClick('left', true);
 
       const sum = result[index].toString().replace('.', ',');
@@ -228,8 +233,6 @@ const start = async () => {
       await sleep(150);
       robot.keyTap('v', ['control']);
 
-      // const delay = lSum > 4 ? DELAY * 2 : DELAY;
-      // robot.typeString(result[index]);
       index += 1;
 
       await sleep(DELAY);
@@ -237,7 +240,6 @@ const start = async () => {
 
     robot.moveMouse(xAndYOfWorkAmountsPanel.x, xAndYOfWorkAmountsPanel.y);
 
-    // await sleep(3000);
     robot.mouseClick();
     await sleep(DELAY);
 
