@@ -25,6 +25,7 @@ if (fs.existsSync('settings.json')) {
 }
 
 if (!settings.areModulesLoaded) {
+  console.log('Скачиваю модули, может занять некоторое время..');
   execSync('npm i --loglevel=error');
   settings.areModulesLoaded = true;
   updateSettings();
