@@ -43,6 +43,9 @@ let isReady = false;
 let depositForCalculate = false;
 let xAndYOfFirstWorkAmount = false;
 let xAndYOfSecondWorkAmount = false;
+let xAndYOfThirdWorkAmount = false;
+let xAndYOfFourthWorkAmount = false;
+let xAndYOfFifthWorkAmount = false;
 let xAndYOfWorkAmountsPanel = false;
 let setCursorToFirstInstrument = false;
 
@@ -51,6 +54,9 @@ const orderSteps = [
   'xAndYOfWorkAmountsPanel',
   'xAndYOfFirstWorkAmount',
   'xAndYOfSecondWorkAmount',
+  'xAndYOfThirdWorkAmount',
+  'xAndYOfFourthWorkAmount',
+  'xAndYOfFifthWorkAmount',
   'setCursorToFirstInstrument',
   'end',
 ];
@@ -78,7 +84,7 @@ const start = async () => {
   }
 
   if (!xAndYOfFirstWorkAmount) {
-    // console.log('Нажмите мышкой на место, где находится 1-й объем');
+    console.log('Нажмите мышкой на место, где находится 1-й объем');
     return true;
   }
 
@@ -87,27 +93,25 @@ const start = async () => {
     return true;
   }
 
+  if (!xAndYOfThirdWorkAmount) {
+    console.log('Нажмите мышкой на место, где находится 3-й объем');
+    return true;
+  }
+
+  if (!xAndYOfFourthWorkAmount) {
+    console.log('Нажмите мышкой на место, где находится 4-й объем');
+    return true;
+  }
+
+  if (!xAndYOfFifthWorkAmount) {
+    console.log('Нажмите мышкой на место, где находится 5-й объем');
+    return true;
+  }
+
   if (!setCursorToFirstInstrument) {
     console.log('Нажмите мышкой на 1-й инструмент в списке');
     return true;
   }
-
-  const differenceBetweenWorkAmounts = Math.abs(xAndYOfFirstWorkAmount.y - xAndYOfSecondWorkAmount.y);
-
-  const xAndYOfThirdWorkAmount = {
-    x: xAndYOfFirstWorkAmount.x,
-    y: xAndYOfSecondWorkAmount.y + differenceBetweenWorkAmounts,
-  };
-
-  const xAndYOfFourthWorkAmount = {
-    x: xAndYOfFirstWorkAmount.x,
-    y: xAndYOfThirdWorkAmount.y + differenceBetweenWorkAmounts,
-  };
-
-  const xAndYOfFifthWorkAmount = {
-    x: xAndYOfFirstWorkAmount.x,
-    y: xAndYOfFourthWorkAmount.y + differenceBetweenWorkAmounts,
-  };
 
   const resultGetExchangeInfo = await getExchangeInfo();
 
@@ -212,12 +216,6 @@ const start = async () => {
     robot.mouseClick();
     await sleep(DELAY);
 
-    robot.moveMouse(xAndYOfWorkAmountsPanel2.x, xAndYOfWorkAmountsPanel2.y);
-
-    // await sleep(3000);
-    robot.mouseClick();
-    await sleep(DELAY);
-
     let index = 0;
     for await (const workAmountPosition of arrOfPositions) {
       robot.moveMouse(workAmountPosition.x, workAmountPosition.y);
@@ -237,10 +235,11 @@ const start = async () => {
       await sleep(DELAY);
     }
 
-    robot.moveMouse(xAndYOfWorkAmountsPanel2.x, xAndYOfWorkAmountsPanel2.y);
+    robot.moveMouse(xAndYOfWorkAmountsPanel.x, xAndYOfWorkAmountsPanel.y);
 
     // await sleep(3000);
     robot.mouseClick();
+    await sleep(DELAY);
 
     robot.keyTap('down');
     await sleep(1000);
@@ -330,6 +329,27 @@ mouseEvents.on('mouseup', (event) => {
 
     case 'xAndYOfSecondWorkAmount': {
       xAndYOfSecondWorkAmount = { x, y };
+      currentStep.incrementStep();
+      return start();
+      break;
+    }
+
+    case 'xAndYOfThirdWorkAmount': {
+      xAndYOfThirdWorkAmount = { x, y };
+      currentStep.incrementStep();
+      return start();
+      break;
+    }
+
+    case 'xAndYOfFourthWorkAmount': {
+      xAndYOfFourthWorkAmount = { x, y };
+      currentStep.incrementStep();
+      return start();
+      break;
+    }
+
+    case 'xAndYOfFifthWorkAmount': {
+      xAndYOfFifthWorkAmount = { x, y };
       currentStep.incrementStep();
       return start();
       break;
