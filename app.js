@@ -44,13 +44,11 @@ let depositForCalculate = false;
 let xAndYOfFirstWorkAmount = false;
 let xAndYOfSecondWorkAmount = false;
 let xAndYOfWorkAmountsPanel = false;
-let xAndYOfWorkAmountsPanel2 = false;
 let setCursorToFirstInstrument = false;
 
 const orderSteps = [
   'depositForCalculate',
   'xAndYOfWorkAmountsPanel',
-  'xAndYOfWorkAmountsPanel2',
   'xAndYOfFirstWorkAmount',
   'xAndYOfSecondWorkAmount',
   'setCursorToFirstInstrument',
@@ -76,11 +74,6 @@ const start = async () => {
 
   if (!xAndYOfWorkAmountsPanel) {
     console.log('Нажмите мышкой на место, где находится панель объемов');
-    return true;
-  }
-
-  if (!xAndYOfWorkAmountsPanel2) {
-    console.log('Нажмите мышкой на место, где находится 1-й объем');
     return true;
   }
 
@@ -323,13 +316,6 @@ mouseEvents.on('mouseup', (event) => {
   switch (currentStep.stepName) {
     case 'xAndYOfWorkAmountsPanel': {
       xAndYOfWorkAmountsPanel = { x, y };
-      currentStep.incrementStep();
-      return start();
-      break;
-    }
-
-    case 'xAndYOfWorkAmountsPanel2': {
-      xAndYOfWorkAmountsPanel2 = { x, y };
       currentStep.incrementStep();
       return start();
       break;
